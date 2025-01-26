@@ -12,7 +12,7 @@ pub trait Renderable
     fn get_position(&self) -> &Position;
     fn has_orientation(&self) -> bool;
     fn get_orientation(&self) -> &Orientation;
-    fn get_sprite(&self) -> &Vec<char>;
+    fn get_sprite(&self) -> Vec<char>;
 }
 
 pub struct Out
@@ -63,12 +63,12 @@ impl Out
         write!(self.stdout, "{}", cursor::Goto((position.x * 2) - 1, position.y)).unwrap();
     }
 
-    pub fn draw_vec_horizontally(&mut self, sprite_vec: &[char])
+    fn draw_vec_horizontally(&mut self, sprite_vec: Vec<char>)
     {
         sprite_vec.iter().for_each(|x: &char| { self.draw(*x); });
     }
 
-    pub fn draw_vec_vertically(&mut self, sprite_vec: &[char])
+    fn draw_vec_vertically(&mut self, sprite_vec: Vec<char>)
     {
         let cursor_position = self.stdout.cursor_pos().unwrap();
         let starting_position = Position::from(cursor_position);
@@ -109,6 +109,7 @@ impl Out
             Orientation::Vertical   => { self.draw_vec_vertically(sprite.get_sprite()); },
         }
     }
+
     pub fn clean_up(&mut self)
     {
         self.flush();

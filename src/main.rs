@@ -3,6 +3,7 @@ mod sprites;
 mod ship;
 
 use std::fmt::{Display, Formatter};
+use crate::io::{Out};
 use crate::sprites::SpriteColor;
 
 const MAP_SIZE: u16 = 32;
@@ -52,7 +53,7 @@ impl Clone for Position
 //     }
 // }
 
-fn draw_map(out: &mut io::Out)
+fn draw_map(out: &mut Out)
 {
     out.clear_all();
 
@@ -86,11 +87,10 @@ fn draw_map(out: &mut io::Out)
 
 fn main()
 {
-    // let sprites = sprites::Sprites::init();
-    let mut out = io::Out::new();
+    let mut out: Out = Out::new();
 
-    // let terminal_size = termion::terminal_size().unwrap();
-    // println!("terminal size: {:?}", terminal_size);
+    let terminal_size = termion::terminal_size().unwrap();
+    println!("terminal size: {:?}", terminal_size);
 
     // let stdin: Stdin = stdin();
     out.flush();
@@ -101,53 +101,8 @@ fn main()
     out.set_color(SpriteColor::Red);
     out.render(&ship);
 
-    // out.go_to_position(&Position { x: 3, y: 3 });
-    // out.draw_vec_horizontally(&sprites::SPRITE_SHIP_SMALL_HORIZONTAL);
-    // out.draw_vec_horizontally(&sprites::SPRITE_SHIP_SMALL_HORIZONTAL);
-    // out.draw_vec_horizontally(&sprites::SPRITE_SHIP_SMALL_HORIZONTAL);
+    out.set_color(SpriteColor::Reset);
 
-    // out.go_to_position(&Position { x: 6, y: 6 });
-    // out.set_color(GameColor::Yellow);
-
-    // out.draw_vec_vertically(&sprites::SPRITE_SHIP_SMALL_VERTICAL);
-    // out.draw_vec_vertically(&sprites::SPRITE_SHIP_SMALL_VERTICAL);
-    // out.draw_vec_vertically(&sprites::SPRITE_SHIP_SMALL_VERTICAL);
-
-    out.draw(sprites::SHORE);
-
-
-    // out.draw_sprite(sprites.ships[0].horizontal[0]);
-    // out.draw_sprite(sprites.ships[0].horizontal[1]);
-    // out.draw_sprite(sprites.ships[0].horizontal[1]);
-    // out.draw_sprite(sprites.ships[0].horizontal[1]);
-    // out.draw_sprite(sprites.ships[0].horizontal[2]);
-
-    // for c in stdin.keys(){
-    //     write!(
-    //         stdout,
-    //         "{}{}",
-    //         termion::cursor::Goto(1, 1),
-    //         termion::clear::CurrentLine
-    //     )
-    //     .unwrap();
-    //
-    //     // Print the key we type...
-    //     match c.unwrap() {
-    //         Key::Char('q') => break,
-    //         Key::Char(c) => println!("{}", c),
-    //         Key::Alt(c) => println!("Alt-{}", c),
-    //         Key::Ctrl(c) => println!("Ctrl-{}", c),
-    //         Key::Left => println!("<left>"),
-    //         Key::Right => println!("<right>"),
-    //         Key::Up => println!("<up>"),
-    //         Key::Down => println!("<down>"),
-    //         _ => println!("Other"),
-    //     }
-    //
-    //     stdout.flush().unwrap();
-    // }
-
-    // Show the cursor again before we exit.
 
     out.clean_up();
 }
