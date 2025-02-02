@@ -1,10 +1,10 @@
 mod io;
-mod sprites;
 mod ship;
+mod sprites;
 
-use std::fmt::{Display, Formatter};
-use crate::io::{Out};
+use crate::io::Out;
 use crate::sprites::SpriteColor;
+use std::fmt::{Display, Formatter};
 
 const MAP_SIZE: u16 = 32;
 
@@ -33,7 +33,10 @@ impl From<(u16, u16)> for Position
 {
     fn from(value: (u16, u16)) -> Self
     {
-        Position { x: (value.0 + 1) / 2, y: value.1 }
+        Position {
+            x: (value.0 + 1) / 2,
+            y: value.1,
+        }
     }
 }
 
@@ -41,7 +44,10 @@ impl Clone for Position
 {
     fn clone(&self) -> Self
     {
-        Position { x: self.x, y: self.y }
+        Position {
+            x: self.x,
+            y: self.y,
+        }
     }
 }
 
@@ -102,7 +108,6 @@ fn main()
     out.render(&ship);
 
     out.set_color(SpriteColor::Reset);
-
 
     out.clean_up();
 }

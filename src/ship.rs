@@ -1,19 +1,22 @@
 use crate::io::Renderable;
 use crate::{sprites, Position, SpriteColor};
 
-pub enum Orientation {
+pub enum Orientation
+{
     Horizontal,
     Vertical,
 }
 
-pub enum ShipSize {
+pub enum ShipSize
+{
     Two,
     Three,
     Four,
     Five,
 }
 
-pub struct Ship {
+pub struct Ship
+{
     sprite: Vec<ShipElement>,
     color: SpriteColor,
     orientation: Orientation,
@@ -21,9 +24,12 @@ pub struct Ship {
     health: u8,
 }
 
-impl Ship {
-    pub fn new(size: ShipSize, orientation: Orientation) -> Ship {
-        let ship_length: u8 = match size {
+impl Ship
+{
+    pub fn new(size: ShipSize, orientation: Orientation) -> Ship
+    {
+        let ship_length: u8 = match size
+        {
             ShipSize::Two => 2,
             ShipSize::Three => 3,
             ShipSize::Four => 4,
@@ -56,9 +62,11 @@ impl Ship {
         }
     }
 
-    fn sprite_tiles(&self) -> Vec<char> {
+    fn sprite_tiles(&self) -> Vec<char>
+    {
         let mut result: Vec<char> = Vec::with_capacity(self.sprite.len());
-        for element in &self.sprite {
+        for element in &self.sprite
+        {
             let tile: char = element.tile;
             result.push(tile);
         }
@@ -67,25 +75,31 @@ impl Ship {
     }
 }
 
-impl Renderable for Ship {
-    fn get_position(&self) -> &Position {
+impl Renderable for Ship
+{
+    fn get_position(&self) -> &Position
+    {
         &self.position
     }
 
-    fn has_orientation(&self) -> bool {
+    fn has_orientation(&self) -> bool
+    {
         true
     }
 
-    fn get_orientation(&self) -> &Orientation {
+    fn get_orientation(&self) -> &Orientation
+    {
         &self.orientation
     }
 
-    fn get_sprite(&self) -> Vec<char> {
+    fn get_sprite(&self) -> Vec<char>
+    {
         self.sprite_tiles()
     }
 }
 
-struct ShipElement {
+struct ShipElement
+{
     tile: char,
     is_hit: bool,
 }
