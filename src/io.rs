@@ -13,6 +13,7 @@ pub enum Color
     Red,
     Blue,
     Yellow,
+    Gray,
 }
 
 impl Into<Box<dyn color::Color>> for Color
@@ -26,6 +27,7 @@ impl Into<Box<dyn color::Color>> for Color
             Color::Red => Box::new(color::Red),
             Color::Blue => Box::new(color::Blue),
             Color::Yellow => Box::new(color::Yellow),
+            Color::Gray => Box::new(color::LightBlack)
         }
     }
 }
