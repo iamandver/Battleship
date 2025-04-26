@@ -1,44 +1,80 @@
+use std::fmt::{Display, Formatter};
 use std::io::{stdout, Stdout, Write};
 use std::ops::Deref;
 
-use crate::ship::Orientation;
-use crate::{Position, SpriteColor, MAP_SIZE};
-use termion::cursor::DetectCursorPos;
 use termion::raw::{IntoRawMode, RawTerminal};
 use termion::{clear, color, cursor};
 
-pub trait Renderable
+pub enum Color
 {
-    fn get_position(&self) -> &Position;
-    fn has_orientation(&self) -> bool;
-    fn get_orientation(&self) -> &Orientation;
-    fn get_sprite(&self) -> Vec<char>;
+    Reset,
+
+    Green,
+    Red,
+    Blue,
+    Yellow,
+}
+
+impl Into<Box<dyn color::Color>> for Color
+{
+    fn into(self) -> Box<dyn color::Color>
+    {
+        match self
+        {
+            Color::Reset => Box::new(color::Reset),
+            Color::Green => Box::new(color::Green),
+            Color::Red => Box::new(color::Red),
+            Color::Blue => Box::new(color::Blue),
+            Color::Yellow => Box::new(color::Yellow),
+        }
+    }
+}
+
+pub struct Vector2
+{
+    pub x: u16,
+    pub y: u16,
+}
+
+impl Display for Vector2
+{
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result
+    {
+        write!(f, "( {}, {} )", self.x, self.y)
+    }
+}
+
+impl Vector2
+{
+    pub(crate) fn new(x: u16, y: u16) -> Self
+    {
+        Vector2 { x, y }
+    }
 }
 
 pub struct Out
 {
     stdout: RawTerminal<Stdout>,
+    horizontal_multiplier: u16,
 }
 
 impl Out
 {
-    pub fn new() -> Out
+    pub fn new(horizontal_multiplier: u16) -> Out
     {
-        Out {
+        let mut out = Out {
             stdout: stdout().into_raw_mode().unwrap(),
-        }
+            horizontal_multiplier,
+        };
+
+        out.flush();
+
+        out
     }
 
     pub fn clear_all(&mut self)
     {
-        write!(
-            self.stdout,
-            "{}{}{}",
-            clear::All,
-            cursor::Goto(1, 1),
-            cursor::Hide
-        )
-        .unwrap();
+        write!(self.stdout, "{}{}{}", clear::All, cursor::Goto(1, 1), cursor::Hide).unwrap();
     }
 
     pub fn flush(&mut self)
@@ -46,98 +82,72 @@ impl Out
         self.stdout.flush().unwrap();
     }
 
-    pub fn set_color(&mut self, color: SpriteColor)
+    pub fn set_foreground_color(&mut self, color: Color)
     {
-        let color: Box<dyn color::Color> = match color
-        {
-            SpriteColor::Reset => Box::new(color::Reset),
-            SpriteColor::Green => Box::new(color::Green),
-            SpriteColor::Red => Box::new(color::Red),
-            SpriteColor::Blue => Box::new(color::Blue),
-            SpriteColor::Yellow => Box::new(color::Yellow),
-        };
+        let color: Box<dyn color::Color> = color.into();
 
         write!(self.stdout, "{}", color::Fg(color.deref())).unwrap();
     }
 
-    pub fn go_to_position(&mut self, position: &Position)
+    pub fn set_background_color(&mut self, color: Color)
+    {
+        let color: Box<dyn color::Color> = color.into();
+
+        write!(self.stdout, "{}", color::Bg(color.deref())).unwrap();
+    }
+
+    pub fn go_to_position(&mut self, position: &Vector2)
     {
         write!(
             self.stdout,
             "{}",
-            cursor::Goto((position.x * 2) - 1, position.y)
+            cursor::Goto(1 + ((position.x - 1) * self.horizontal_multiplier), position.y)
         )
         .unwrap();
     }
 
-    fn draw_vec_horizontally(&mut self, sprite_vec: Vec<char>)
-    {
-        sprite_vec.iter().for_each(|x: &char| {
-            self.draw(*x);
-        });
-    }
-
-    fn draw_vec_vertically(&mut self, sprite_vec: Vec<char>)
-    {
-        let cursor_position = self.stdout.cursor_pos().unwrap();
-        let starting_position = Position::from(cursor_position);
-        let mut current_position = starting_position.clone();
-
-        sprite_vec.iter().for_each(|x: &char| {
-            self.go_to_position(&current_position);
-            self.draw(*x);
-            current_position = Position {
-                x: current_position.x,
-                y: current_position.y + 1,
-            };
-        });
-
-        self.go_to_position(&Position {
-            x: starting_position.x + 1,
-            y: starting_position.y,
-        });
-    }
-
     pub fn draw(&mut self, sprite: char)
     {
-        write!(self.stdout, "{} ", sprite).unwrap();
+        write!(self.stdout, "{}", sprite).unwrap();
+
+        for _ in 1..self.horizontal_multiplier
+        {
+            write!(self.stdout, " ").unwrap();
+        }
     }
 
-    // fn draw_at(&mut self, character: char, position: Position)
-    // {
-    //     self.go_to_position(&position);
-    //     self.draw(character);
-    // }
-
-    pub fn render(&mut self, sprite: &dyn Renderable)
+    pub fn draw_at(&mut self, character: char, position: &Vector2)
     {
-        self.go_to_position(sprite.get_position());
+        self.go_to_position(position);
+        self.draw(character);
+    }
 
-        // if !sprite.has_orientation()
-        // {
-        //     self.draw(sprite)
-        // }
-
-        match sprite.get_orientation()
+    pub fn draw_string_at(&mut self, string: &str, position: &Vector2)
+    {
+        let mut position_y = position.y;
+        for line in string.lines()
         {
-            Orientation::Horizontal =>
+            let current_position = Vector2::new(position.x, position_y);
+            self.go_to_position(&current_position);
+
+            for ch in line.chars()
             {
-                self.draw_vec_horizontally(sprite.get_sprite());
+                self.draw(ch);
             }
-            Orientation::Vertical =>
-            {
-                self.draw_vec_vertically(sprite.get_sprite());
-            }
+
+            position_y += 1;
         }
     }
 
     pub fn clean_up(&mut self)
     {
+        let (_, terminal_size_y) = termion::terminal_size().unwrap();
+
         self.flush();
-        self.set_color(SpriteColor::Reset);
-        self.go_to_position(&Position {
-            x: MAP_SIZE,
-            y: MAP_SIZE,
+        self.set_foreground_color(Color::Reset);
+        self.go_to_position(&Vector2 {
+            x: 1,
+            y: terminal_size_y,
         });
         write!(self.stdout, "{}", cursor::Show).unwrap();
     }

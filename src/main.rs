@@ -1,113 +1,133 @@
 mod io;
-mod ship;
-mod sprites;
 
-use crate::io::Out;
-use crate::sprites::SpriteColor;
-use std::fmt::{Display, Formatter};
+use crate::io::{Out, Color, Vector2};
+
+const WATER: char = '~';
+const SHORE: char = '#';
+// const SHIP_HORIZONTAL_LEFT: char = '◀';
+// const SHIP_HORIZONTAL_RIGHT: char = '▶';
+// const SHIP_VERTICAL_TOP: char = '▲';
+// const SHIP_VERTICAL_BOTTOM: char = '▼';
+const SHIP_BODY: char = '■';
 
 const MAP_SIZE: u16 = 32;
+const ROOM_SIZE_X: u16 = 7;
+const ROOM_SIZE_Y: u16 = 5;
 
-// struct Game
-// {
-//     map_size: u8,
-//     sprites: sprites::Sprites,
-// }
 
-struct Position
+fn draw_room_at(out: &mut Out, position: &Vector2)
 {
-    x: u16,
-    y: u16,
-}
+    out.set_background_color(Color::Yellow);
+    out.go_to_position(position);
 
-impl Display for Position
-{
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result
+    for _ in 0..ROOM_SIZE_X
     {
-        write!(f, "( {}, {} )", self.x, self.y)
+        out.draw(' ');
+    }
+
+    for i in 1..ROOM_SIZE_Y - 1
+    {
+        out.go_to_position(&Vector2::new(position.x, position.y + i));
+        out.draw(' ');
+
+        out.go_to_position(&Vector2::new(position.x + ROOM_SIZE_X - 1, position.y + i));
+        out.draw(' ');
+    }
+
+    out.go_to_position(&Vector2::new(position.x, position.y + ROOM_SIZE_Y - 1));
+
+    for _ in 0..ROOM_SIZE_X
+    {
+        out.draw(' ');
     }
 }
-
-// used to convert terminal coordinates to world coordinates
-impl From<(u16, u16)> for Position
-{
-    fn from(value: (u16, u16)) -> Self
-    {
-        Position {
-            x: (value.0 + 1) / 2,
-            y: value.1,
-        }
-    }
-}
-
-impl Clone for Position
-{
-    fn clone(&self) -> Self
-    {
-        Position {
-            x: self.x,
-            y: self.y,
-        }
-    }
-}
-
-// impl Position
-// {
-//     fn new(x: u16, y: u16) -> Self
-//     {
-//         Position { x, y }
-//     }
-// }
 
 fn draw_map(out: &mut Out)
 {
     out.clear_all();
 
+    out.set_background_color(Color::Yellow);
+
     for _i in 0..MAP_SIZE
     {
-        out.draw(sprites::SHORE);
+        out.draw(' ');
     }
 
     for i in 1..MAP_SIZE
     {
         let y: u16 = i + 1;
-        out.go_to_position(&Position { x: 1, y });
+        out.go_to_position(&Vector2::new(1, y));
 
-        out.draw(sprites::SHORE);
+        out.draw(' ');
 
+        out.set_background_color(Color::Reset);
         for _j in 0..MAP_SIZE - 2
         {
-            out.draw(sprites::WATER);
+            out.draw(WATER);
         }
 
-        out.draw(sprites::SHORE);
+        out.set_background_color(Color::Yellow);
+        out.draw(' ');
     }
 
-    out.go_to_position(&Position { x: 1, y: MAP_SIZE });
+    out.go_to_position(&Vector2::new(1, MAP_SIZE));
 
     for _i in 0..MAP_SIZE
     {
-        out.draw(sprites::SHORE);
+        out.draw(' ');
     }
+
+    out.set_background_color(Color::Reset);
 }
+
+// fn draw(frame: &mut Frame)
+// {
+//     let circle = Circle {
+//         x: 5.0,
+//         y: 5.0,
+//         radius: 8.0,
+//         color: Color::Yellow,
+//     };
+//
+//     let map = Canvas::default()
+//         .block(Block::bordered().title("World"))
+//         .paint(|ctx| {
+//             ctx.draw(&circle);
+//         });
+//
+//     let text: Text = Text::raw("Hello World!");
+//     frame.render_widget(map, frame.area());
+// }
 
 fn main()
 {
-    let mut out: Out = Out::new();
+    const HORIZONTAL_MULTIPLIER: u16 = 2;
+    let mut out: Out = Out::new(HORIZONTAL_MULTIPLIER);
 
     let terminal_size = termion::terminal_size().unwrap();
+
     println!("terminal size: {:?}", terminal_size);
+    println!("terminal scaled size x: {:?}", terminal_size.0 / HORIZONTAL_MULTIPLIER);
 
     // let stdin: Stdin = stdin();
-    out.flush();
 
     draw_map(&mut out);
 
-    let ship = ship::Ship::new(ship::ShipSize::Three, ship::Orientation::Horizontal);
-    out.set_color(SpriteColor::Red);
-    out.render(&ship);
+    out.set_background_color(Color::Red);
+    out.draw_at(' ', &Vector2::new(3, 4));
+    out.draw_at(' ', &Vector2::new(12, 6));
 
-    out.set_color(SpriteColor::Reset);
+    draw_room_at(&mut out, &Vector2::new(40, 1));
+    draw_room_at(&mut out, &Vector2::new(12, 4));
+
+    out.draw_at(' ', &Vector2::new(terminal_size.0 / HORIZONTAL_MULTIPLIER, terminal_size.1));
+
+    out.set_background_color(Color::Green);
+    let test = String::from("   \n   \n   ");
+
+    out.draw_string_at(&test, &Vector2::new(19, 10));
+
+    out.set_background_color(Color::Reset);
 
     out.clean_up();
 }
