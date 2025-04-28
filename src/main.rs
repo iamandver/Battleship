@@ -2,18 +2,6 @@ mod io;
 
 use crate::io::{Color, Out, Vector2};
 
-const WATER: char = '~';
-// const SHORE: char = '#';
-// const SHIP_HORIZONTAL_LEFT: char = '◀';
-// const SHIP_HORIZONTAL_RIGHT: char = '▶';
-// const SHIP_VERTICAL_TOP: char = '▲';
-// const SHIP_VERTICAL_BOTTOM: char = '▼';
-// const SHIP_BODY: char = '■';
-
-// const MAP_SIZE: u16 = 32;
-const ROOM_WIDTH: u16 = 7;
-const ROOM_HEIGHT: u16 = 5;
-
 struct DungeonFloor<'a>
 {
     room_size: Vector2,
@@ -26,28 +14,27 @@ struct Room<'a>
     neighbours: Vec<&'a Room<'a>>,
 }
 
-fn draw_room_at(out: &mut Out, position: &Vector2)
+fn draw_room_at(out: &mut Out, position: &Vector2, size: &Vector2)
 {
-    out.set_background_color(Color::Yellow);
     out.go_to_position(position);
 
-    for _ in 0..ROOM_WIDTH
+    for _ in 0..size.x
     {
         out.draw(' ');
     }
 
-    for i in 1..ROOM_HEIGHT - 1
+    for i in 1..size.y - 1
     {
         out.go_to_position(&Vector2::new(position.x, position.y + i));
         out.draw(' ');
 
-        out.go_to_position(&Vector2::new(position.x + ROOM_WIDTH - 1, position.y + i));
+        out.go_to_position(&Vector2::new(position.x + size.x - 1, position.y + i));
         out.draw(' ');
     }
 
-    out.go_to_position(&Vector2::new(position.x, position.y + ROOM_HEIGHT - 1));
+    out.go_to_position(&Vector2::new(position.x, position.y + size.y - 1));
 
-    for _ in 0..ROOM_WIDTH
+    for _ in 0..size.x
     {
         out.draw(' ');
     }
@@ -55,8 +42,7 @@ fn draw_room_at(out: &mut Out, position: &Vector2)
 
 fn draw_map(out: &mut Out, map_size: &Vector2)
 {
-    let bottom_padding = 4;
-    let border_char = '*';
+    let border_char = '.';
     let position_char = '.';
 
     out.clear_all();
@@ -66,7 +52,7 @@ fn draw_map(out: &mut Out, map_size: &Vector2)
         out.draw(border_char);
     }
 
-    for i in 1..map_size.y - bottom_padding
+    for i in 1..map_size.y
     {
         let y: u16 = i + 1;
         out.go_to_position(&Vector2::new(1, y));
@@ -83,7 +69,7 @@ fn draw_map(out: &mut Out, map_size: &Vector2)
         out.draw(border_char);
     }
 
-    out.go_to_position(&Vector2::new(1, map_size.y - bottom_padding));
+    out.go_to_position(&Vector2::new(1, map_size.y));
 
     for _ in 0..map_size.x
     {
@@ -93,36 +79,57 @@ fn draw_map(out: &mut Out, map_size: &Vector2)
 
 fn main()
 {
-    let horizontal_multiplier: u16 = 2;
-    let mut out: Out = Out::new(horizontal_multiplier);
+    // let stdin: Stdin = stdin();
 
-    let (terminal_size_x, terminal_size_y): (u16, u16) = termion::terminal_size().unwrap();
-    let (map_size_x, map_size_y): (u16, u16) = (terminal_size_x / horizontal_multiplier, terminal_size_y);
+    let horizontal_multiplier              = 2;
+    let bottom_padding                     = 2;
+
+    let (terminal_size_x, terminal_size_y) = termion::terminal_size().unwrap();
+    let map_size                           = Vector2::new(terminal_size_x / horizontal_multiplier, terminal_size_y - bottom_padding);
+    let rooms_layout                       = Vector2::new(9, 9);
+    let room_size                          = Vector2::new(map_size.x / rooms_layout.x, map_size.y / rooms_layout.y );
+
 
     println!("terminal size: {:?}", (terminal_size_x, terminal_size_y));
-    println!("terminal scaled size x: {:?}", (map_size_x, map_size_y));
+    println!("map size: {}", map_size);
+    println!("room size: {}", room_size);
 
-    // let stdin: Stdin = stdin();
+    let mut out = Out::new(horizontal_multiplier);
 
     out.clear_all();
 
-    draw_map(&mut out, &Vector2::new(map_size_x, map_size_y));
+    draw_map(&mut out, &map_size);
 
-    out.set_background_color(Color::Red);
-    out.draw_at(' ', &Vector2::new(3, 4));
-    out.draw_at(' ', &Vector2::new(12, 6));
+    // out.set_background_color(Color::Red);
+    // out.draw_at(' ', &Vector2::new(3, 4));
+    // out.draw_at(' ', &Vector2::new(12, 6));
 
-    draw_room_at(&mut out, &Vector2::new(40, 1));
-    draw_room_at(&mut out, &Vector2::new(12, 4));
+    // draw_room_at(&mut out, &Vector2::new(40, 1), &room_size);
+    // draw_room_at(&mut out, &Vector2::new(12, 32), &room_size);
 
-    out.draw_at(' ', &Vector2::new(terminal_size_x / horizontal_multiplier, terminal_size_y));
 
-    out.set_background_color(Color::Green);
-    let test = String::from("   \n   \n   ");
-
-    out.draw_string_at(&test, &Vector2::new(19, 10));
-
+    out.set_background_color(Color::Gray);
+    for y in 0..rooms_layout.x
+    {
+        for x in 0..rooms_layout.y
+        {
+            draw_room_at(
+                &mut out,
+                &Vector2::new(1 + room_size.x * x, 1 + room_size.y * y),
+                &room_size,
+            );
+        }
+    }
     out.set_background_color(Color::Reset);
+
+    
+    out.set_background_color(Color::Red);
+    out.draw_at(' ', &Vector2::new(map_size.x, map_size.y));
+
+    // let test = String::from("   \n   \n   ");
+    // out.set_background_color(Color::Green);
+    // out.draw_string_at(&test, &Vector2::new(19, 10));
+    // out.set_background_color(Color::Reset);
 
     out.clean_up();
 }

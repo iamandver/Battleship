@@ -16,22 +16,23 @@ pub enum Color
     Gray,
 }
 
-impl Into<Box<dyn color::Color>> for Color
+impl From<Color> for Box<dyn color::Color>
 {
-    fn into(self) -> Box<dyn color::Color>
+    fn from(value: Color) -> Self
     {
-        match self
+        match value
         {
             Color::Reset => Box::new(color::Reset),
             Color::Green => Box::new(color::Green),
             Color::Red => Box::new(color::Red),
             Color::Blue => Box::new(color::Blue),
             Color::Yellow => Box::new(color::Yellow),
-            Color::Gray => Box::new(color::LightBlack)
+            Color::Gray => Box::new(color::LightBlack),
         }
     }
 }
 
+#[derive(Debug)]
 pub struct Vector2
 {
     pub x: u16,
@@ -87,7 +88,6 @@ impl Out
     pub fn set_foreground_color(&mut self, color: Color)
     {
         let color: Box<dyn color::Color> = color.into();
-
         write!(self.stdout, "{}", color::Fg(color.deref())).unwrap();
     }
 
@@ -147,10 +147,13 @@ impl Out
 
         self.flush();
         self.set_foreground_color(Color::Reset);
+        self.set_background_color(Color::Reset);
+
         self.go_to_position(&Vector2 {
             x: 1,
             y: terminal_size_y,
         });
+
         write!(self.stdout, "{}", cursor::Show).unwrap();
     }
 }
