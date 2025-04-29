@@ -39,19 +39,25 @@ pub struct Vector2
     pub y: u16,
 }
 
-impl Display for Vector2
-{
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result
-    {
-        write!(f, "( {}, {} )", self.x, self.y)
-    }
-}
-
 impl Vector2
 {
     pub(crate) fn new(x: u16, y: u16) -> Self
     {
         Vector2 { x, y }
+    }
+}
+
+impl From<(u16, u16)> for Vector2
+{
+    fn from(value: (u16, u16)) -> Self {
+        Self::new(value.0, value.1 )
+    }
+}
+impl Display for Vector2
+{
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result
+    {
+        write!(f, "( {}, {} )", self.x, self.y)
     }
 }
 
