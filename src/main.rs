@@ -1,9 +1,9 @@
 mod io;
-mod dungeon_floor;
+mod dungeon_level;
 
 use std::cmp::min;
-use dungeon_floor::{DungeonFloor, Room};
-use crate::io::{Color, Out, Vector2};
+use dungeon_level::{DungeonLevel, Room };
+use crate::io::{ Color, Out, Vector2 };
 
 fn draw_room_at( out: &mut Out, position: &Vector2, size: &Vector2, color: Option<Color> )
 {
@@ -40,7 +40,7 @@ fn draw_room_at( out: &mut Out, position: &Vector2, size: &Vector2, color: Optio
 
     if color_was_modified
     {
-        out.set_background_color( Color::Reset )
+        out.set_background_color( Color::Reset );
     }
 }
 
@@ -51,7 +51,7 @@ fn draw_overlay( out: &mut Out, map_size: &Vector2 )
     let border_char   = '.';
     let position_char = '.';
 
-    out.clear_all();
+    out.clear_screen();
 
     for _ in 0..map_size.x
     {
@@ -91,7 +91,7 @@ fn convert_room_coordinate_to_screen_position( room_coordinate: &Vector2, room_s
     Vector2::new( x, y )
 }
 
-fn draw_floor( out: &mut Out, floor: &DungeonFloor )
+fn draw_floor( out: &mut Out, floor: &DungeonLevel)
 {
     let room_size = &floor.room_size;
 
@@ -137,9 +137,9 @@ fn main()
 
     let mut out = Out::new( horizontal_multiplier );
 
-    out.clear_all();
+    out.clear_screen();
 
-    draw_overlay(&mut out, &map_size );
+    draw_overlay( &mut out, &map_size );
 
     // out.set_background_color(Color::Red);
     // out.draw_at(' ', &Vector2::new(3, 4));
@@ -148,18 +148,20 @@ fn main()
     // draw_room_at(&mut out, &Vector2::new(40, 1), &room_size);
     // draw_room_at(&mut out, &Vector2::new(12, 32), &room_size);
 
-    let mut dungeon_floor = DungeonFloor::new( &floor_size, &room_size );
+    let mut dungeon_floor = DungeonLevel::new(&floor_size, &room_size );
 
-    dungeon_floor.add_room_at( Vector2::new( 1, 1 ) );
-    dungeon_floor.add_room_at( Vector2::new( 3, 4 ) );
-    dungeon_floor.add_room_at( Vector2::new( 9, 4 ) );
-    dungeon_floor.add_room_at( Vector2::new( 9, 8 ) );
+    dungeon_floor.create_room_at( Vector2::new( 1, 1 ) );
+    dungeon_floor.create_room_at( Vector2::new( 3, 4 ) );
+    dungeon_floor.create_room_at( Vector2::new( 9, 4 ) );
+    dungeon_floor.create_room_at( Vector2::new( 9, 8 ) );
 
-    let center = Vector2::new( ( floor_size.x + 1 ) / 2, ( floor_size.x + 1 ) / 2 );
+    let center_room_coords = Vector2::new( ( floor_size.x + 1 ) / 2, ( floor_size.x + 1 ) / 2 );
+    dungeon_floor.create_room_at( center_room_coords );
 
-    dungeon_floor.add_room_at( center );
+    let room = Room::new( Vector2::new( 1, 8 ) );
+    dungeon_floor.add_room( room );
 
-    draw_floor( &mut out , &dungeon_floor );
+    draw_floor( &mut out, &dungeon_floor );
 
     // out.set_background_color( Color::Red );
     // out.draw_at( ' ', &Vector2::new( room_size.x, room_size.y ) );
@@ -168,6 +170,4 @@ fn main()
     // out.set_background_color(Color::Green);
     // out.draw_string_at(&test, &Vector2::new(19, 10));
     // out.set_background_color(Color::Reset);
-
-    out.clean_up();
 }

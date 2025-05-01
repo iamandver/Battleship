@@ -1,9 +1,8 @@
-use std::fmt::{Display, Formatter};
-use std::io::{stdout, Stdout, Write};
-use std::ops::Deref;
+use std::fmt::{ Display, Formatter };
+use std::io::{ stdout, Stdout, Write };
 
-use termion::raw::{IntoRawMode, RawTerminal};
-use termion::{clear, color, cursor};
+use termion::raw::{ IntoRawMode, RawTerminal };
+use termion::{ clear, color, cursor };
 
 pub enum Color
 {
@@ -18,21 +17,21 @@ pub enum Color
 
 impl From<Color> for Box<dyn color::Color>
 {
-    fn from(value: Color) -> Self
+    fn from( value: Color ) -> Self
     {
         match value
         {
-            Color::Reset => Box::new(color::Reset),
-            Color::Green => Box::new(color::Green),
-            Color::Red => Box::new(color::Red),
-            Color::Blue => Box::new(color::Blue),
-            Color::Yellow => Box::new(color::Yellow),
-            Color::Gray => Box::new(color::LightBlack),
+            Color::Reset  => Box::new( color::Reset ),
+            Color::Green  => Box::new( color::Green ),
+            Color::Red    => Box::new( color::Red ),
+            Color::Blue   => Box::new( color::Blue ),
+            Color::Yellow => Box::new( color::Yellow ),
+            Color::Gray   => Box::new( color::LightBlack ),
         }
     }
 }
 
-#[derive(Debug)]
+#[derive( Debug )]
 pub struct Vector2
 {
     pub x: u16,
@@ -41,21 +40,22 @@ pub struct Vector2
 
 impl Vector2
 {
-    pub(crate) fn new(x: u16, y: u16) -> Self
+    pub fn new( x: u16, y: u16 ) -> Self
     {
         Vector2 { x, y }
     }
 }
 
-impl From<(u16, u16)> for Vector2
+impl From<( u16, u16 )> for Vector2
 {
-    fn from(value: (u16, u16)) -> Self {
-        Self::new(value.0, value.1 )
+    fn from( value: ( u16, u16 ) ) -> Self
+    {
+        Self::new( value.0, value.1 )
     }
 }
 impl Display for Vector2
 {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result
+    fn fmt( &self, f: &mut Formatter<'_> ) -> std::fmt::Result
     {
         write!(f, "( {}, {} )", self.x, self.y)
     }
@@ -69,9 +69,10 @@ pub struct Out
 
 impl Out
 {
-    pub fn new(horizontal_multiplier: u16) -> Out
+    pub fn new( horizontal_multiplier: u16 ) -> Out
     {
-        let mut out = Out {
+        let mut out = Out 
+        {
             stdout: stdout().into_raw_mode().unwrap(),
             horizontal_multiplier,
         };
@@ -81,85 +82,88 @@ impl Out
         out
     }
 
-    pub fn clear_all(&mut self)
+    pub fn clear_screen( &mut self )
     {
         write!(self.stdout, "{}{}{}", clear::All, cursor::Goto(1, 1), cursor::Hide).unwrap();
     }
 
-    pub fn flush(&mut self)
+    pub fn flush( &mut self )
     {
         self.stdout.flush().unwrap();
     }
 
-    pub fn set_foreground_color(&mut self, color: Color)
+    pub fn set_foreground_color( &mut self, color: Color )
     {
         let color: Box<dyn color::Color> = color.into();
-        write!(self.stdout, "{}", color::Fg(color.deref())).unwrap();
+        write!( self.stdout, "{}", color::Fg( &*color ) ).unwrap();
     }
 
-    pub fn set_background_color(&mut self, color: Color)
+    pub fn set_background_color( &mut self, color: Color )
     {
         let color: Box<dyn color::Color> = color.into();
-
-        write!(self.stdout, "{}", color::Bg(color.deref())).unwrap();
+        write!( self.stdout, "{}", color::Bg( &*color ) ).unwrap();
     }
 
-    pub fn go_to_position(&mut self, position: &Vector2)
+    pub fn go_to_position( &mut self, position: &Vector2 )
     {
         write!(
             self.stdout,
             "{}",
-            cursor::Goto(1 + ((position.x - 1) * self.horizontal_multiplier), position.y)
+            cursor::Goto( 1 + ( ( position.x - 1 ) * self.horizontal_multiplier ), position.y )
         )
         .unwrap();
     }
 
-    pub fn draw(&mut self, sprite: char)
+    pub fn draw( &mut self, sprite: char )
     {
-        write!(self.stdout, "{}", sprite).unwrap();
+        write!( self.stdout, "{}", sprite ).unwrap();
 
         for _ in 1..self.horizontal_multiplier
         {
-            write!(self.stdout, " ").unwrap();
+            write!( self.stdout, " " ).unwrap();
         }
     }
 
-    pub fn draw_at(&mut self, character: char, position: &Vector2)
+    pub fn draw_at( &mut self, character: char, position: &Vector2 )
     {
-        self.go_to_position(position);
-        self.draw(character);
+        self.go_to_position( position );
+        self.draw( character );
     }
 
-    pub fn draw_string_at(&mut self, string: &str, position: &Vector2)
+    pub fn draw_string_at( &mut self, string: &str, position: &Vector2 )
     {
         let mut position_y = position.y;
         for line in string.lines()
         {
-            let current_position = Vector2::new(position.x, position_y);
-            self.go_to_position(&current_position);
+            let current_position = Vector2::new( position.x, position_y );
+            self.go_to_position( &current_position );
 
             for ch in line.chars()
             {
-                self.draw(ch);
+                self.draw( ch );
             }
 
             position_y += 1;
         }
     }
 
-    pub fn clean_up(&mut self)
+    fn clean_up( &mut self )
     {
-        let (_, terminal_size_y) = termion::terminal_size().unwrap();
+        let ( _, terminal_size_y ) = termion::terminal_size().unwrap();
 
         self.flush();
-        self.set_foreground_color(Color::Reset);
-        self.set_background_color(Color::Reset);
+        self.set_foreground_color( Color::Reset );
+        self.set_background_color( Color::Reset );
+        self.go_to_position( &Vector2::new(1, terminal_size_y) );
 
-        self.go_to_position(&Vector2 {
-            x: 1,
-            y: terminal_size_y,
-        });
+        write!( self.stdout, "{}", cursor::Show ).unwrap();
+    }
+}
 
-        write!(self.stdout, "{}", cursor::Show).unwrap();
+impl Drop for Out
+{
+    fn drop( &mut self ) 
+    {
+        self.clean_up();
     }
 }
